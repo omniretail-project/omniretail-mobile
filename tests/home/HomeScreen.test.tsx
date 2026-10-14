@@ -66,8 +66,8 @@ describe("HomeScreen: tienda configurada en el panel web", () => {
 
     const { container } = render(<HomeScreen />);
 
-    expect(screen.getAllByText("FERREPHARMA").length).toBeGreaterThan(0);
-    expect(screen.getByText("Descubre FerrePharma")).toBeTruthy();
+    expect(screen.getByText("FERRETERÍA LOS SIMPSON")).toBeTruthy();
+    expect(screen.getByText("Descubre Ferretería Los Simpson")).toBeTruthy();
     expect(container.querySelector("[data-logo='https://cdn.example.com/logo.png']")).not.toBeNull();
   });
 
