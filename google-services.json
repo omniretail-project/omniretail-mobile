@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "200771015037",
+    "project_id": "omniretail-60025",
+    "storage_bucket": "omniretail-60025.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:200771015037:android:9abab5a337eb93d3dd3c14",
+        "android_client_info": {
+          "package_name": "com.anonymous.omniretailmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHTu6lgWoVOMX9kmTUXu_eG-FrxxIM1NI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

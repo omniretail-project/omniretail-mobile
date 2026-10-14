@@ -15,7 +15,9 @@ function openNotificationOrder(response: any) {
 
   router.push({
     pathname: "/(protected)/orders/[id]",
-    params: { id: orderId },
+    params: {
+      id: orderId.startsWith("api:") ? orderId : `api:${orderId}`,
+    },
   });
 }
 
