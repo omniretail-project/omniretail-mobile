@@ -1,3 +1,4 @@
+import { registerOrderPushDevice, unregisterOrderPushDevice } from "@/modules/notifications/services/orderPushRegistration";
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import type { AuthResult, Customer, LoginInput, LoginResult, RegisterCustomerInput, RegistrationResult, Session } from "@/core";
@@ -103,6 +104,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
     });
   }, []);
 
+  useEffect(() => {
+    if (!session || !isApiMode()) {
+      return;
+    }
+
+    void registerOrderPushDevice(session.customerId);
+  }, [session?.id, session?.customerId]);
+
   const login = useCallback(
     async (input: LoginInput) => {
       const result = await authRepository.login(input);
@@ -151,6 +160,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
   );
 
   const logout = useCallback(async () => {
+    if (isApiMode()) {
+      await unregisterOrderPushDevice();
+    }
+
     await authRepository.logout();
     setSession(null);
     setCustomer(null);
