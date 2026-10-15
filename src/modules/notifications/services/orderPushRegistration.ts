@@ -41,6 +41,7 @@ async function obtainExpoToken(): Promise<string | null> {
     return null;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const Notifications = require("expo-notifications");
 
   const result = await Notifications.getExpoPushTokenAsync({
