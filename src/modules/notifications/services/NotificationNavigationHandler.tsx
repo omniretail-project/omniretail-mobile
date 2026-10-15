@@ -1,7 +1,14 @@
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
+
+import { isApiMode } from "@/infrastructure/api/config";
+import { useSession } from "@/modules/auth";
+import {
+  registerOrderPushDevice,
+  unregisterOrderPushDevice,
+} from "./orderPushRegistration";
 
 const isExpoGo =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -15,11 +22,35 @@ function openNotificationOrder(response: any) {
 
   router.push({
     pathname: "/(protected)/orders/[id]",
-    params: { id: orderId },
+    params: {
+      id: orderId.startsWith("api:") ? orderId : `api:${orderId}`,
+    },
   });
 }
 
 export function NotificationNavigationHandler() {
+  const { session } = useSession();
+  const hadSessionRef = useRef(false);
+
+  // Registrar el dispositivo al iniciar o cambiar sesión
+  useEffect(() => {
+    if (!session || !isApiMode()) {
+      return;
+    }
+
+    hadSessionRef.current = true;
+    void registerOrderPushDevice(session.customerId);
+  }, [session]);
+
+  // Desvincular el dispositivo al cerrar sesión
+  useEffect(() => {
+    if (!session && hadSessionRef.current && isApiMode()) {
+      hadSessionRef.current = false;
+      void unregisterOrderPushDevice();
+    }
+  }, [session]);
+
+  // Abrir el pedido al tocar una notificación
   useEffect(() => {
     if (isExpoGo || Platform.OS === "web") {
       return;
@@ -45,7 +76,7 @@ export function NotificationNavigationHandler() {
         subscription.remove();
       };
     } catch {
-      // In environments where expo-notifications native module is missing
+      // Entornos donde el módulo nativo no esté disponible
     }
   }, []);
 
