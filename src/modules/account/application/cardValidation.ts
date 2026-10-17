@@ -1,45 +1,45 @@
 import type { CreateCustomerPaymentMethodInput } from "@/core";
-import { CARD_BRANDS, GUATEMALA_BANKS } from "@/config";
-
-const MAX_EXPIRATION_YEARS_AHEAD = 20;
-const CARDHOLDER_NAME_MAX_LENGTH = 60;
+import { GUATEMALA_BANKS } from "@/config";
+import {
+  detectStorefrontCardBrand,
+  validateCardNumber,
+  validateCardExpiration,
+  validateCardholderName,
+  getSecurityCodeLength,
+} from "@/modules/checkout/application/cardPaymentValidation";
 
 export type CardFormState = {
-  brand: string;
-  last4: string;
+  cardNumber: string;
+  expiration: string;
+  cvv: string;
   issuingBank: string;
   cardholderName: string;
-  expirationMonth: string;
-  expirationYear: string;
 };
 
 export function validateCardForm(input: CardFormState): string | null {
-  const month = Number(input.expirationMonth);
-  const year = normalizeExpirationYear(input.expirationYear);
+  const digits = input.cardNumber.replace(/\D/g, "");
+  const numberError = validateCardNumber(digits);
+  if (numberError) return numberError;
 
-  if (!CARD_BRANDS.includes(input.brand as (typeof CARD_BRANDS)[number])) {
-    return "Selecciona una marca de tarjeta válida.";
+  const brand = detectStorefrontCardBrand(digits);
+  if (!brand) return "La marca de la tarjeta no es válida.";
+
+  const expirationError = validateCardExpiration(input.expiration);
+  if (expirationError) return expirationError;
+
+  if (!new RegExp(`^\\d{${getSecurityCodeLength(brand)}}$`).test(input.cvv)) {
+    return brand === "American Express"
+      ? "El código de seguridad debe tener 4 dígitos."
+      : "El código de seguridad debe tener 3 dígitos.";
   }
-  if (!/^\d{4}$/.test(input.last4)) {
-    return "Ingresa exactamente los últimos 4 dígitos.";
-  }
-  if (!GUATEMALA_BANKS.includes(input.issuingBank as (typeof GUATEMALA_BANKS)[number])) {
+
+  const nameError = validateCardholderName(input.cardholderName);
+  if (nameError) return nameError;
+
+  if (!GUATEMALA_BANKS.includes(
+    input.issuingBank as (typeof GUATEMALA_BANKS)[number]
+  )) {
     return "Selecciona un banco emisor válido.";
-  }
-  if (input.cardholderName.trim().length > CARDHOLDER_NAME_MAX_LENGTH) {
-    return `El titular no puede superar ${CARDHOLDER_NAME_MAX_LENGTH} caracteres.`;
-  }
-  if (!Number.isInteger(month) || month < 1 || month > 12) {
-    return "El mes de expiracion no es valido.";
-  }
-  if (!Number.isInteger(year)) {
-    return "El año de expiración no es válido.";
-  }
-  if (year === new Date().getFullYear() && month < new Date().getMonth() + 1) {
-    return "La tarjeta esta vencida.";
-  }
-  if (year > new Date().getFullYear() + MAX_EXPIRATION_YEARS_AHEAD) {
-    return `El año de expiración no puede superar ${new Date().getFullYear() + MAX_EXPIRATION_YEARS_AHEAD}.`;
   }
 
   return null;
@@ -50,28 +50,27 @@ export function buildSafePaymentMethodInput(
   owner: { tenantId: string; customerId: string },
   isDefault: boolean,
 ): CreateCustomerPaymentMethodInput {
+  const digits = input.cardNumber.replace(/\D/g, "");
+  const brand = detectStorefrontCardBrand(digits);
+
+  if (!brand || validateCardForm(input)) {
+    throw new Error("Los datos de la tarjeta no son válidos.");
+  }
+
+  const [month, year] = input.expiration.split("/");
+
   return {
     tenantId: owner.tenantId,
     customerId: owner.customerId,
-    providerTokenId: createPaymentMethodReference(input.brand, input.last4),
-    brand: input.brand,
+    providerTokenId: createPaymentMethodReference(brand, digits.slice(-4)),
+    brand,
     issuingBank: input.issuingBank.trim(),
-    last4: input.last4,
-    expirationMonth: Number(input.expirationMonth),
-    expirationYear: normalizeExpirationYear(input.expirationYear),
+    last4: digits.slice(-4),
+    expirationMonth: Number(month),
+    expirationYear: 2000 + Number(year),
     cardholderName: input.cardholderName.trim(),
     isDefault,
   };
-}
-
-function normalizeExpirationYear(value: string): number {
-  const year = Number(value.trim());
-
-  if (value.trim().length === 2) {
-    return 2000 + year;
-  }
-
-  return year;
 }
 
 function createPaymentMethodReference(brand: string, last4: string): string {

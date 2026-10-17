@@ -11,7 +11,13 @@ import {
   View,
 } from "react-native";
 
-import { CARD_BRANDS, GUATEMALA_BANKS } from "@/config";
+import { GUATEMALA_BANKS } from "@/config";
+import {
+  detectStorefrontCardBrand,
+  formatCardNumber,
+  formatCardExpiration,
+  getSecurityCodeLength,
+} from "@/modules/checkout/application/cardPaymentValidation";
 import { getErrorMessage } from "@/infrastructure";
 import { useSession } from "@/modules/auth";
 import { KeyboardAwareContainer, OptionPicker } from "@/shared";
@@ -38,12 +44,11 @@ const palette = {
 };
 
 const initialCardForm: CardFormState = {
-  brand: "",
-  last4: "",
+  cardNumber: "",
+  expiration: "",
+  cvv: "",
   issuingBank: "",
   cardholderName: "",
-  expirationMonth: "",
-  expirationYear: "",
 };
 
 export function PaymentMethodsScreen() {
@@ -262,6 +267,8 @@ export function NewPaymentMethodScreen() {
         ),
       );
 
+      setForm(initialCardForm);
+
       router.replace(
         returnTo === "checkout"
           ? "/(protected)/checkout/payment"
@@ -304,30 +311,26 @@ export function NewPaymentMethodScreen() {
           Completa los datos solicitados para guardar tu tarjeta.
         </Text>
 
-        <View style={styles.pickerSection}>
-          <Text style={styles.fieldLabel}>Marca de la tarjeta</Text>
-          <OptionPicker
-            label=""
-            onChange={(brand) =>
-              setForm((current) => ({ ...current, brand }))
-            }
-            options={CARD_BRANDS}
-            value={form.brand}
-          />
-        </View>
-
         <Field
           keyboardType="number-pad"
-          label="Últimos 4 dígitos"
-          maxLength={4}
-          onChangeText={(last4) =>
+          label="Número de tarjeta"
+          maxLength={23}
+          onChangeText={(value) =>
             setForm((current) => ({
               ...current,
-              last4: last4.replace(/\D/g, "").slice(0, 4),
+              cardNumber: formatCardNumber(value),
             }))
           }
-          value={form.last4}
+          value={form.cardNumber}
         />
+
+        <Text style={styles.fieldHint}>
+          Marca detectada: {
+            detectStorefrontCardBrand(
+              form.cardNumber.replace(/\\D/g, "")
+            ) ?? "Sin identificar"
+          }
+        </Text>
 
         <View style={styles.pickerSection}>
           <Text style={styles.fieldLabel}>Banco emisor</Text>
@@ -357,28 +360,35 @@ export function NewPaymentMethodScreen() {
         <View style={styles.expirationRow}>
           <Field
             keyboardType="number-pad"
-            label="Mes"
-            maxLength={2}
-            onChangeText={(expirationMonth) =>
+            label="Vencimiento (MM/AA)"
+            maxLength={5}
+            onChangeText={(value) =>
               setForm((current) => ({
                 ...current,
-                expirationMonth: expirationMonth.replace(/\D/g, "").slice(0, 2),
+                expiration: formatCardExpiration(value),
               }))
             }
-            value={form.expirationMonth}
+            value={form.expiration}
           />
 
           <Field
             keyboardType="number-pad"
-            label="Año"
-            maxLength={4}
-            onChangeText={(expirationYear) =>
+            label="CVV"
+            secureTextEntry
+            maxLength={
+              getSecurityCodeLength(
+                detectStorefrontCardBrand(
+                  form.cardNumber.replace(/\\D/g, "")
+                )
+              )
+            }
+            onChangeText={(value) =>
               setForm((current) => ({
                 ...current,
-                expirationYear: expirationYear.replace(/\D/g, "").slice(0, 4),
+                cvv: value.replace(/\\D/g, "").slice(0, 4),
               }))
             }
-            value={form.expirationYear}
+            value={form.cvv}
           />
         </View>
 
@@ -456,12 +466,14 @@ function Field({
   label,
   maxLength,
   onChangeText,
+  secureTextEntry = false,
   value,
 }: {
   keyboardType?: "default" | "number-pad";
   label: string;
   maxLength?: number;
   onChangeText(value: string): void;
+  secureTextEntry?: boolean;
   value: string;
 }) {
   return (
@@ -472,6 +484,7 @@ function Field({
         keyboardType={keyboardType}
         maxLength={maxLength}
         onChangeText={onChangeText}
+        secureTextEntry={secureTextEntry}
         placeholder={label}
         placeholderTextColor={palette.muted}
         style={styles.input}

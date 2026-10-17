@@ -28,7 +28,7 @@ export type LoginResult = AuthResult | MfaChallengeResult;
  */
 export type RegistrationResult =
   | { kind: "authenticated"; auth: AuthResult }
-  | { kind: "verificationRequired"; email: string };
+  | { kind: "verificationRequired"; email: string; message?: string };
 
 export interface AuthRepository {
   login(input: LoginInput): Promise<LoginResult>;
@@ -36,6 +36,7 @@ export interface AuthRepository {
   registerCustomer(input: RegisterCustomerInput): Promise<RegistrationResult>;
   /** Confirma el correo con el token del enlace enviado al registrarse. */
   verifyEmail?(token: string): Promise<void>;
+  resendVerificationEmail?(email: string): Promise<string>;
   logout(): Promise<void>;
   getCurrentSession(): Promise<Session | null>;
   changePassword(input: ChangePasswordInput): Promise<void>;

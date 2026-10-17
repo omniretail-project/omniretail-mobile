@@ -1,5 +1,5 @@
 import { Link, router, useLocalSearchParams } from "expo-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
@@ -279,8 +279,8 @@ export function RegisterScreen() {
       }
 
       setMessage(
-        `Cuenta creada. Enviamos un enlace de verificación a ${result.email}. ` +
-          "Ábrelo o pégalo en \"Verificar mi correo\" para poder iniciar sesión.",
+        result.message ??
+          "Revisa tu correo para continuar con la verificación.",
       );
     } catch (error) {
       setError(getErrorMessage(error, "No se pudo crear la cuenta."));
@@ -341,11 +341,66 @@ export function RegisterScreen() {
 
 export function VerifyEmailScreen() {
   const { authRepository } = useRepositories();
-  const params = useLocalSearchParams<{ token?: string }>();
+  const params = useLocalSearchParams<{ token?: string; email?: string }>();
   const [token, setToken] = useState(params.token ?? "");
+  const [email, setEmail] = useState(params.email ?? "");
+  const [resendSeconds, setResendSeconds] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+  const resendLock = useRef(false);
+  const resendAvailableAt = useRef(0);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return;
+
+    const interval = setInterval(() => {
+      setResendSeconds(
+        Math.max(0, Math.ceil(
+          (resendAvailableAt.current - Date.now()) / 1000
+        ))
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [resendSeconds]);
+
+  async function handleResend() {
+    if (resendLock.current ||
+        Date.now() < resendAvailableAt.current) return;
+
+    const validationError = validateEmail(email.trim());
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (!authRepository.resendVerificationEmail) {
+      setError("El reenvío no está disponible en modo demo.");
+      return;
+    }
+
+    resendLock.current = true;
+    setIsResending(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const responseMessage =
+        await authRepository.resendVerificationEmail(email.trim());
+
+      resendAvailableAt.current = Date.now() + 30000;
+      setResendSeconds(30);
+      setMessage(responseMessage ||
+        "Si el correo es válido, te enviamos un mensaje para continuar.");
+    } catch (error) {
+      setError(getErrorMessage(error, "No se pudo reenviar el enlace."));
+    } finally {
+      resendLock.current = false;
+      setIsResending(false);
+    }
+  }
 
   async function handleSubmit() {
     if (!token.trim()) {
@@ -389,6 +444,24 @@ export function VerifyEmailScreen() {
         label="Verificar"
         loading={isSubmitting}
         onPress={handleSubmit}
+      />
+      <AuthTextInput
+        autoCapitalize="none"
+        keyboardType="email-address"
+        label="Correo para reenviar enlace"
+        onChangeText={setEmail}
+        placeholder="tu@correo.com"
+        value={email}
+      />
+      <PrimaryButton
+        disabled={isResending || resendSeconds > 0}
+        label={
+          resendSeconds > 0
+            ? `Reenviar enlace (${resendSeconds}s)`
+            : "Reenviar enlace"
+        }
+        loading={isResending}
+        onPress={handleResend}
       />
       <InlineLink href="/(auth)/login" label="Ir a iniciar sesion" />
     </AuthForm>

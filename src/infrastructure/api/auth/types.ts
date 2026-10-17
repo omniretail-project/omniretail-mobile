@@ -22,8 +22,8 @@ export type ApiMfaChallengeResponse = {
 export type ApiLoginOutcome = ApiLoginResponse | ApiMfaChallengeResponse;
 
 export type ApiRegisterCustomerResponse = {
+  message: string;
   user: {
-    id: string;
     name: string;
     email: string;
     type: "customer" | "employee";
