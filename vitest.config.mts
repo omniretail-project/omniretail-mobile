@@ -23,6 +23,8 @@ export default defineConfig({
       reporter: ["text", "lcov"],
       reportsDirectory: "coverage",
       include: [
+        "src/infrastructure/api/auth/ApiAuthRepository.ts",
+        "src/modules/account/application/cardValidation.ts",
         "src/infrastructure/api/account/ApiStorefrontConfigService.ts",
         "src/modules/home/components/RemoteBannerCard.tsx",
         "src/modules/home/screens/HomeScreen.tsx",
