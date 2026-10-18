@@ -156,6 +156,7 @@ export class ApiAuthRepository implements AuthRepository {
     return {
       kind: "verificationRequired",
       email: response.user.email,
+      message: response.message,
     };
   }
 
@@ -163,6 +164,18 @@ export class ApiAuthRepository implements AuthRepository {
     await this.apiClient.post<void>("/auth/email/verify", {
       token: extractEmailToken(token),
     });
+  }
+
+  async resendVerificationEmail(email: string): Promise<string> {
+    const response = await this.apiClient.post<{ message: string }>(
+      "/auth/email/resend",
+      {
+        email: email.trim(),
+        tenantSlug: this.tenantSlug,
+      },
+    );
+
+    return response.message;
   }
 
   async changePassword(input: ChangePasswordInput): Promise<void> {
