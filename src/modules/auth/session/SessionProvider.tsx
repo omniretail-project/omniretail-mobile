@@ -1,3 +1,4 @@
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import type { AuthResult, Customer, LoginInput, LoginResult, RegisterCustomerInput, RegistrationResult, Session } from "@/core";
@@ -174,9 +175,18 @@ export function SessionProvider({ children }: PropsWithChildren) {
   );
 
   const logout = useCallback(async () => {
-    await authRepository.logout();
-    setSession(null);
-    setCustomer(null);
+    try {
+      await authRepository.logout();
+    } finally {
+      try {
+        await GoogleSignin.signOut();
+      } catch (error) {
+        console.warn("No se pudo limpiar la cuenta local de Google:", error);
+      }
+
+      setSession(null);
+      setCustomer(null);
+    }
   }, [authRepository]);
 
   const value = useMemo<SessionContextValue>(
