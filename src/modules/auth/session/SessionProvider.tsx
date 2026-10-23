@@ -13,6 +13,7 @@ type SessionContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   login(input: LoginInput): Promise<LoginResult>;
+  loginWithGoogle(idToken: string, rememberMe?: boolean): Promise<LoginResult>;
   completeMfaLogin(challengeToken: string, code: string): Promise<void>;
   register(input: Omit<RegisterCustomerInput, "tenantId">): Promise<RegistrationResult>;
   logout(): Promise<void>;
@@ -119,6 +120,28 @@ export function SessionProvider({ children }: PropsWithChildren) {
     [authRepository],
   );
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string, rememberMe = true) => {
+      if (!authRepository.loginWithGoogle) {
+        throw new Error("Google no está disponible en modo demo.");
+      }
+
+      const result = await authRepository.loginWithGoogle(
+        idToken,
+        rememberMe,
+      );
+
+      if ("challengeToken" in result) {
+        return result;
+      }
+
+      setSession(result.session);
+      setCustomer(result.customer);
+      return result;
+    },
+    [authRepository],
+  );
+
   const completeMfaLogin = useCallback(
     async (challengeToken: string, code: string) => {
       if (!authRepository.verifyMfaChallenge) {
@@ -163,12 +186,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
       isAuthenticated: !!session,
       isLoading,
       login,
+      loginWithGoogle,
       completeMfaLogin,
       register,
       logout,
       refreshSession,
     }),
-    [completeMfaLogin, customer, isLoading, login, logout, refreshSession, register, session],
+    [completeMfaLogin, customer, isLoading, login, loginWithGoogle, logout, refreshSession, register, session],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
