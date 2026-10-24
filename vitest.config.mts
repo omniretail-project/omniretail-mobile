@@ -24,6 +24,7 @@ export default defineConfig({
       reportsDirectory: "coverage",
       include: [
         "src/infrastructure/api/auth/ApiAuthRepository.ts",
+        "src/modules/auth/session/SessionProvider.tsx",
         "src/modules/account/application/cardValidation.ts",
         "src/infrastructure/api/account/ApiStorefrontConfigService.ts",
         "src/modules/home/components/RemoteBannerCard.tsx",
