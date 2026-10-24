@@ -584,6 +584,27 @@ export function ProductDetailScreen() {
           </Text>
         </Pressable>
 
+        <Pressable
+          accessibilityLabel="Ver mi carrito"
+          accessibilityRole="button"
+          onPress={() => router.navigate("/(protected)/(tabs)/cart")}
+          style={detailStyles.viewCartButton}
+        >
+          <Ionicons
+            color={categoryPalette.deepBlue}
+            name="cart-outline"
+            size={20}
+          />
+          <Text style={detailStyles.viewCartText}>
+            Ver mi carrito
+          </Text>
+          <Ionicons
+            color={categoryPalette.deepBlue}
+            name="arrow-forward"
+            size={18}
+          />
+        </Pressable>
+
         {message ? (
           <View style={detailStyles.successBox}>
             <Ionicons
@@ -911,6 +932,24 @@ const categoryStyles = StyleSheet.create({
 
 
 const detailStyles = StyleSheet.create({
+  viewCartButton: {
+    alignItems: "center",
+    backgroundColor: categoryPalette.white,
+    borderColor: categoryPalette.deepBlue,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "center",
+    marginTop: 12,
+    minHeight: 48,
+    paddingHorizontal: 16,
+  },
+  viewCartText: {
+    color: categoryPalette.deepBlue,
+    fontSize: 14,
+    fontWeight: "800",
+  },
   content: {
     backgroundColor: categoryPalette.vanillaMilk,
     flexGrow: 1,
