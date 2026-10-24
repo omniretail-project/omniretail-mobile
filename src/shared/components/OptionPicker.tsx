@@ -52,7 +52,7 @@ export function OptionPicker({
       <Modal animationType="slide" onRequestClose={handleClose} transparent={Platform.OS === "ios"} visible={isOpen}>
         <View style={[styles.backdrop, Platform.OS === "android" && styles.androidBackdrop]}>
           <Pressable accessibilityLabel="Cerrar selector" onPress={handleClose} style={StyleSheet.absoluteFill} />
-          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoiding}>
+          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} pointerEvents="box-none" style={styles.keyboardAvoiding}>
             <View style={[styles.sheet, Platform.OS === "android" && styles.androidSheet]}>
               <View style={styles.sheetHeader}><Text style={styles.sheetTitle}>{label}</Text><Pressable onPress={handleClose} style={styles.close}><Ionicons color={colors.primary} name="close" size={20} /></Pressable></View>
               {options.length > SEARCH_THRESHOLD ? <TextInput autoFocus onChangeText={setQuery} placeholder={`Buscar ${label.toLowerCase()}`} placeholderTextColor={colors.textMuted} returnKeyType="search" style={styles.search} value={query} /> : null}

@@ -587,7 +587,7 @@ export function ProductDetailScreen() {
         <Pressable
           accessibilityLabel="Ver mi carrito"
           accessibilityRole="button"
-          onPress={() => router.push("/(protected)/(tabs)/cart")}
+          onPress={() => router.navigate("/(protected)/(tabs)/cart")}
           style={detailStyles.viewCartButton}
         >
           <Ionicons

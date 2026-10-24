@@ -69,4 +69,115 @@ describe("OptionPicker", () => {
 
     expect(getByText("No hay municipios")).not.toBeNull();
   });
+
+  it("filtra departamentos ignorando tildes", () => {
+    const handleChange = vi.fn();
+
+    const options = [
+      "Alta Verapaz",
+      "Baja Verapaz",
+      "Chimaltenango",
+      "Chiquimula",
+      "El Progreso",
+      "Escuintla",
+      "Guatemala",
+      "Huehuetenango",
+      "Izabal",
+      "Jalapa",
+      "Jutiapa",
+      "Petén",
+      "Quetzaltenango",
+      "Quiché",
+      "Retalhuleu",
+    ];
+
+    const { getByText, getByPlaceholderText, queryByText } = render(
+      <OptionPicker
+        label="Departamento"
+        onChange={handleChange}
+        options={options}
+        value=""
+      />,
+    );
+
+    fireEvent.click(getByText("Selecciona departamento"));
+
+    const buscador = getByPlaceholderText("Buscar departamento");
+
+    fireEvent.change(buscador, {
+      target: { value: "peten" },
+    });
+
+    expect(getByText("Petén")).not.toBeNull();
+    expect(queryByText("Guatemala")).toBeNull();
+
+    fireEvent.click(getByText("Petén"));
+
+    expect(handleChange).toHaveBeenCalledWith("Petén");
+  });
+
+  it("filtra municipios y permite seleccionar el resultado", () => {
+    const handleChange = vi.fn();
+
+    const options = [
+      "Aguacatán",
+      "Barillas",
+      "Chiantla",
+      "Colotenango",
+      "Concepción Huista",
+      "Cuilco",
+      "Huehuetenango",
+      "Jacaltenango",
+      "La Democracia",
+      "Malacatancito",
+      "Nentón",
+      "San Pedro Necta",
+      "Santa Eulalia",
+    ];
+
+    const { getByText, getByPlaceholderText } = render(
+      <OptionPicker
+        label="Municipio"
+        onChange={handleChange}
+        options={options}
+        value=""
+      />,
+    );
+
+    fireEvent.click(getByText("Selecciona municipio"));
+
+    fireEvent.change(getByPlaceholderText("Buscar municipio"), {
+      target: { value: "chiantla" },
+    });
+
+    fireEvent.click(getByText("Chiantla"));
+
+    expect(handleChange).toHaveBeenCalledWith("Chiantla");
+  });
+
+  it("muestra un mensaje cuando la búsqueda no tiene resultados", () => {
+    const options = Array.from(
+      { length: 15 },
+      (_, index) => `Municipio ${index + 1}`,
+    );
+
+    const { getByText, getByPlaceholderText } = render(
+      <OptionPicker
+        label="Municipio"
+        emptyText="Sin resultados"
+        onChange={vi.fn()}
+        options={options}
+        value=""
+      />,
+    );
+
+    fireEvent.click(getByText("Selecciona municipio"));
+
+    fireEvent.change(getByPlaceholderText("Buscar municipio"), {
+      target: { value: "NoExiste" },
+    });
+
+    expect(getByText("Sin resultados")).not.toBeNull();
+  });
+
 });
