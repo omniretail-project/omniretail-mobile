@@ -74,6 +74,38 @@ export class ApiAuthRepository implements AuthRepository {
     }
   }
 
+  async loginWithGoogle(
+    idToken: string,
+    rememberMe = true,
+  ): Promise<LoginResult> {
+    const response = await this.apiClient.post<ApiLoginOutcome>(
+      "/auth/google",
+      {
+        idToken,
+        tenantSlug: this.tenantSlug,
+        expectedUserType: "customer",
+        rememberMe,
+      },
+    );
+
+    if ("challengeToken" in response) {
+      return {
+        kind: "mfaRequired",
+        challengeToken: response.challengeToken,
+        method: response.method,
+      };
+    }
+
+    await this.tokenStorage.saveToken(response.token);
+
+    try {
+      return await this.restoreFromBackend();
+    } catch (error) {
+      await this.clearLocalSession();
+      throw error;
+    }
+  }
+
   async verifyMfaChallenge(
     challengeToken: string,
     code: string,

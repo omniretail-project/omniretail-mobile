@@ -1,6 +1,7 @@
 import { Link, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import {
   ActivityIndicator,
   Platform,
@@ -30,7 +31,7 @@ import {
 } from "../validation";
 
 export function LoginScreen() {
-  const { completeMfaLogin, login } = useSession();
+  const { completeMfaLogin, login, loginWithGoogle } = useSession();
   const params = useLocalSearchParams<{ reason?: string }>();
   const [email, setEmail] = useState(
     isApiMode() ? "" : "cliente@demo.com",
@@ -81,6 +82,72 @@ export function LoginScreen() {
       } else {
         setError(getErrorMessage(error, "No se pudo iniciar sesión."));
       }
+    } finally {
+      if (!navigated) {
+        setIsSubmitting(false);
+      }
+    }
+  }
+
+  async function handleGoogleLogin() {
+    if (!isApiMode()) {
+      setError("Google requiere conexión con el servidor.");
+      return;
+    }
+
+    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    if (!webClientId) {
+      setError("Falta configurar Google Web Client ID.");
+      return;
+    }
+
+    setError(null);
+    setInfoMessage(null);
+    setIsSubmitting(true);
+
+    let navigated = false;
+
+    try {
+      GoogleSignin.configure({
+        webClientId,
+        offlineAccess: false,
+      });
+
+      if (Platform.OS === "android") {
+        await GoogleSignin.hasPlayServices({
+          showPlayServicesUpdateDialog: true,
+        });
+      }
+
+      const googleResponse = await GoogleSignin.signIn();
+
+      if (googleResponse.type === "cancelled") {
+        return;
+      }
+
+      const idToken = googleResponse.data?.idToken;
+
+      if (!idToken) {
+        throw new Error("Google no devolvió un token de identidad.");
+      }
+
+      const result = await loginWithGoogle(idToken, rememberMe);
+
+      if ("kind" in result && result.kind === "mfaRequired") {
+        setMfaChallenge(result);
+        return;
+      }
+
+      navigated = true;
+      setIsSubmitting(false);
+      router.replace("/(protected)/(tabs)");
+    } catch (caught) {
+      setError(
+        getErrorMessage(
+          caught,
+          "No fue posible iniciar sesión con Google."
+        )
+      );
     } finally {
       if (!navigated) {
         setIsSubmitting(false);
@@ -213,7 +280,8 @@ export function LoginScreen() {
       </View>
 
       <Pressable
-        onPress={() => setInfoMessage("El inicio de sesión con Google no está disponible actualmente.")}
+        disabled={isSubmitting}
+        onPress={() => void handleGoogleLogin()}
         style={({ pressed }) => [styles.googleButton, pressed ? styles.buttonPressed : null]}
       >
         <Text style={styles.googleIcon}>G</Text>

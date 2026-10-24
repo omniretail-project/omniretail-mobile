@@ -32,6 +32,7 @@ export type RegistrationResult =
 
 export interface AuthRepository {
   login(input: LoginInput): Promise<LoginResult>;
+  loginWithGoogle?(idToken: string, rememberMe?: boolean): Promise<LoginResult>;
   verifyMfaChallenge?(challengeToken: string, code: string): Promise<AuthResult>;
   registerCustomer(input: RegisterCustomerInput): Promise<RegistrationResult>;
   /** Confirma el correo con el token del enlace enviado al registrarse. */
