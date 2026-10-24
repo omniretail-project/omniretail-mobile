@@ -1,5 +1,6 @@
 import { fireEvent, render } from "@testing-library/react";
 import React from "react";
+import { Platform } from "react-native";
 import { describe, expect, it, vi } from "vitest";
 
 import { OptionPicker } from "@/shared/components/OptionPicker";
@@ -178,6 +179,82 @@ describe("OptionPicker", () => {
     });
 
     expect(getByText("Sin resultados")).not.toBeNull();
+  });
+
+
+  it.each(["android", "ios"] as const)(
+    "presenta correctamente el selector en Android e iOS: %s",
+    (platform) => {
+      const original = Object.getOwnPropertyDescriptor(Platform, "OS");
+
+      Object.defineProperty(Platform, "OS", {
+        configurable: true,
+        value: platform,
+      });
+
+      try {
+        const options = Array.from(
+          { length: 15 },
+          (_, index) => `Departamento ${index + 1}`,
+        );
+
+        const onChange = vi.fn();
+
+        const { getByText, getByPlaceholderText } = render(
+          <OptionPicker
+            label="Departamento"
+            onChange={onChange}
+            options={options}
+            value=""
+          />,
+        );
+
+        fireEvent.click(getByText("Selecciona departamento"));
+
+        fireEvent.change(
+          getByPlaceholderText("Buscar departamento"),
+          { target: { value: "Departamento 15" } },
+        );
+
+        fireEvent.click(getByText("Departamento 15"));
+
+        expect(onChange).toHaveBeenCalledWith("Departamento 15");
+        expect(getByText("Selecciona departamento")).not.toBeNull();
+      } finally {
+        if (original) {
+          Object.defineProperty(Platform, "OS", original);
+        }
+      }
+    },
+  );
+
+  it("permite cerrar y volver a abrir el selector", () => {
+    const options = Array.from(
+      { length: 15 },
+      (_, index) => `Municipio ${index + 1}`,
+    );
+
+    const { getByText, getByPlaceholderText, getByLabelText } = render(
+      <OptionPicker
+        label="Municipio"
+        onChange={vi.fn()}
+        options={options}
+        value=""
+      />,
+    );
+
+    fireEvent.click(getByText("Selecciona municipio"));
+
+    fireEvent.change(
+      getByPlaceholderText("Buscar municipio"),
+      { target: { value: "Municipio 15" } },
+    );
+
+    fireEvent.click(getByLabelText("Cerrar selector"));
+    fireEvent.click(getByText("Selecciona municipio"));
+
+    expect(getByPlaceholderText("Buscar municipio")).not.toBeNull();
+    expect(getByText("Municipio 1")).not.toBeNull();
   });
 
 });

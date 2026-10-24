@@ -49,10 +49,10 @@ export function OptionPicker({
       </Pressable>
       {options.length === 0 ? <Text style={styles.empty}>{emptyText}</Text> : null}
 
-      <Modal animationType="slide" onRequestClose={handleClose} transparent={Platform.OS === "ios"} visible={isOpen}>
+      <Modal animationType="slide" onRequestClose={handleClose} transparent={Platform.OS !== "android"} visible={isOpen}>
         <View style={[styles.backdrop, Platform.OS === "android" && styles.androidBackdrop]}>
           <Pressable accessibilityLabel="Cerrar selector" onPress={handleClose} style={StyleSheet.absoluteFill} />
-          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} pointerEvents="box-none" style={styles.keyboardAvoiding}>
+          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardAvoiding}>
             <View style={[styles.sheet, Platform.OS === "android" && styles.androidSheet]}>
               <View style={styles.sheetHeader}><Text style={styles.sheetTitle}>{label}</Text><Pressable onPress={handleClose} style={styles.close}><Ionicons color={colors.primary} name="close" size={20} /></Pressable></View>
               {options.length > SEARCH_THRESHOLD ? <TextInput autoFocus onChangeText={setQuery} placeholder={`Buscar ${label.toLowerCase()}`} placeholderTextColor={colors.textMuted} returnKeyType="search" style={styles.search} value={query} /> : null}
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 0,
     flex: 1,
     maxHeight: "100%",
-    paddingTop: 48,
+    paddingTop: spacing.lg,
   },
-  backdrop: { backgroundColor: "rgba(23, 32, 51, .55)", flex: 1, justifyContent: "flex-end" }, keyboardAvoiding: { flex: 1, justifyContent: "flex-end", width: "100%" }, sheet: { backgroundColor: "#FAF1DE", borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "72%", padding: spacing.lg }, sheetHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.md }, sheetTitle: { color: "#3E668F", fontSize: typography.subtitle, fontWeight: "800" }, close: { alignItems: "center", backgroundColor: "#E7E8F8", borderRadius: 16, height: 32, justifyContent: "center", width: 32 }, option: { alignItems: "center", borderBottomColor: "#E6D9C1", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 48, paddingHorizontal: spacing.sm }, optionSelected: { backgroundColor: "#3E668F", borderRadius: radius.sm }, optionText: { color: colors.text, fontSize: typography.body }, optionTextSelected: { color: colors.surface, fontWeight: "700" },
+  backdrop: { backgroundColor: "rgba(23, 32, 51, .55)", flex: 1, justifyContent: "flex-end" }, keyboardAvoiding: { flex: 1, justifyContent: "flex-end", pointerEvents: "box-none", width: "100%" }, sheet: { backgroundColor: "#FAF1DE", borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "72%", padding: spacing.lg }, sheetHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.md }, sheetTitle: { color: "#3E668F", fontSize: typography.subtitle, fontWeight: "800" }, close: { alignItems: "center", backgroundColor: "#E7E8F8", borderRadius: 16, height: 32, justifyContent: "center", width: 32 }, option: { alignItems: "center", borderBottomColor: "#E6D9C1", borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 48, paddingHorizontal: spacing.sm }, optionSelected: { backgroundColor: "#3E668F", borderRadius: radius.sm }, optionText: { color: colors.text, fontSize: typography.body }, optionTextSelected: { color: colors.surface, fontWeight: "700" },
 });
