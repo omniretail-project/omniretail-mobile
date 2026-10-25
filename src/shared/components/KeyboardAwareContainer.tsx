@@ -41,7 +41,12 @@ export const KeyboardAwareContainer = forwardRef<
   const insetsBottom = insets?.bottom ?? 0;
   const scrollViewRef = useRef<ScrollView | null>(null);
   const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const focusOffsetRef = useRef(focusScrollOffset);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    focusOffsetRef.current = focusScrollOffset;
+  }, [focusScrollOffset]);
 
   const setRefs = useCallback(
     (node: ScrollView | null) => {
@@ -56,6 +61,8 @@ export const KeyboardAwareContainer = forwardRef<
   );
 
   const scrollToFocusedInput = useCallback(() => {
+    if (Platform.OS !== "android") return;
+
     const focusedInput = TextInput.State?.currentlyFocusedInput?.();
     const scrollResponder = scrollViewRef.current as
       | (ScrollView & {
@@ -74,13 +81,15 @@ export const KeyboardAwareContainer = forwardRef<
     ) {
       scrollResponder.scrollResponderScrollNativeHandleToKeyboard(
         focusedInput,
-        focusScrollOffset,
+        focusOffsetRef.current,
         true,
       );
     }
-  }, [focusScrollOffset]);
+  }, []);
 
   const scheduleFocusScroll = useCallback(() => {
+    if (Platform.OS !== "android") return;
+
     if (focusTimerRef.current) {
       clearTimeout(focusTimerRef.current);
     }
@@ -90,18 +99,22 @@ export const KeyboardAwareContainer = forwardRef<
   }, [scrollToFocusedInput]);
 
   useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    if (Platform.OS !== "android") return;
 
-    const showSubscription = Keyboard?.addListener?.(showEvent, (event) => {
-      const nextHeight = Math.max(0, event?.endCoordinates?.height ?? 0);
-      setKeyboardHeight(nextHeight);
-      scheduleFocusScroll();
-    });
+    const showSubscription = Keyboard?.addListener?.(
+      "keyboardDidShow",
+      (event) => {
+        const nextHeight = Math.max(0, event?.endCoordinates?.height ?? 0);
+        setKeyboardHeight(nextHeight);
+        scheduleFocusScroll();
+      },
+    );
 
-    const hideSubscription = Keyboard?.addListener?.(hideEvent, () => {
+    const hideSubscription = Keyboard?.addListener?.("keyboardDidHide", () => {
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current);
+        focusTimerRef.current = null;
+      }
       setKeyboardHeight(0);
     });
 
@@ -120,8 +133,6 @@ export const KeyboardAwareContainer = forwardRef<
   const basePaddingBottom =
     (StyleSheet.flatten(contentContainerStyle)?.paddingBottom as number) || 0;
 
-  const androidKeyboardPadding = Platform.OS === "android" ? keyboardHeight : 0;
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -138,7 +149,7 @@ export const KeyboardAwareContainer = forwardRef<
               basePaddingBottom +
               insetsBottom +
               extraBottomSpace +
-              androidKeyboardPadding,
+              (Platform.OS === "android" ? keyboardHeight : 0),
           },
         ]}
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "none"}

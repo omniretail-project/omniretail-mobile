@@ -44,21 +44,31 @@ describe("KeyboardAwareContainer", () => {
     expect(fnRef).toHaveBeenCalled();
   });
 
-  it("aplica estilos de contenedor y padding extra", () => {
-    const { container } = render(
-      <KeyboardAwareContainer
-        containerStyle={{ backgroundColor: "red" }}
-        contentContainerStyle={{ padding: 10, paddingBottom: 15 }}
-        extraBottomSpace={30}
-      >
-        <Text>Test</Text>
-      </KeyboardAwareContainer>,
-    );
+  it("aplica estilos de contenedor, padding extra e ignora auto-scroll manual en iOS", () => {
+    const originalOS = Platform.OS;
+    Platform.OS = "ios";
+    const addListenerSpy = vi.spyOn(Keyboard, "addListener");
 
-    expect(container).toBeDefined();
+    try {
+      const { container, getByPlaceholderText } = render(
+        <KeyboardAwareContainer
+          containerStyle={{ backgroundColor: "red" }}
+          contentContainerStyle={{ padding: 10, paddingBottom: 15 }}
+          extraBottomSpace={30}
+        >
+          <TextInput placeholder="Campo iOS" />
+        </KeyboardAwareContainer>,
+      );
+
+      fireEvent.focus(getByPlaceholderText("Campo iOS"));
+      expect(container).toBeDefined();
+      expect(addListenerSpy).not.toHaveBeenCalled();
+    } finally {
+      Platform.OS = originalOS;
+    }
   });
 
-  it("maneja offset de teclado personalizado y plataforma Android", () => {
+  it("maneja offset de teclado personalizado en plataforma Android", () => {
     const originalOS = Platform.OS;
     Platform.OS = "android";
 
@@ -75,7 +85,7 @@ describe("KeyboardAwareContainer", () => {
     }
   });
 
-  it("ajusta el espacio inferior y desplaza al input enfocado cuando se muestra el teclado en Android", () => {
+  it("desplaza al input enfocado de forma aislada en keyboardDidShow, en onFocus y cancela timers al ocultar teclado", () => {
     vi.useFakeTimers();
     const originalOS = Platform.OS;
     Platform.OS = "android";
@@ -118,6 +128,7 @@ describe("KeyboardAwareContainer", () => {
       scrollRef.current.scrollResponderScrollNativeHandleToKeyboard =
         scrollToKeyboardSpy;
 
+      // 1. Apertura del teclado dispara el primer auto-scroll tras 60ms
       act(() => {
         listeners.keyboardDidShow?.({
           endCoordinates: { height: 320, screenY: 480 },
@@ -128,31 +139,36 @@ describe("KeyboardAwareContainer", () => {
         vi.advanceTimersByTime(70);
       });
 
-      expect(scrollToKeyboardSpy).toHaveBeenCalledWith(
+      expect(scrollToKeyboardSpy).toHaveBeenCalledTimes(1);
+      expect(scrollToKeyboardSpy).toHaveBeenLastCalledWith(
         fakeFocusedInput,
         120,
         true,
       );
 
+      // 2. Evento onFocus aislado (sin disparar otro keyboardDidShow) dispara el segundo auto-scroll
       fireEvent.focus(getByPlaceholderText("Contraseña"));
-      expect(onFocusSpy).toHaveBeenCalled();
+      expect(onFocusSpy).toHaveBeenCalledTimes(1);
 
       act(() => {
-        listeners.keyboardDidShow?.({
-          endCoordinates: { height: 300, screenY: 500 },
-        });
         vi.advanceTimersByTime(70);
       });
 
       expect(scrollToKeyboardSpy).toHaveBeenCalledTimes(2);
 
+      // 3. Si ocurre un foco y el teclado se oculta antes de los 60ms, el timer pendiente se cancela
+      fireEvent.focus(getByPlaceholderText("Contraseña"));
       act(() => {
+        vi.advanceTimersByTime(30);
         listeners.keyboardDidHide?.();
+        vi.advanceTimersByTime(50);
       });
 
+      expect(scrollToKeyboardSpy).toHaveBeenCalledTimes(2);
+
       unmount();
-      expect(removeShow).toHaveBeenCalled();
-      expect(removeHide).toHaveBeenCalled();
+      expect(removeShow).toHaveBeenCalledTimes(1);
+      expect(removeHide).toHaveBeenCalledTimes(1);
     } finally {
       Platform.OS = originalOS;
       (TextInput as any).State = originalState;

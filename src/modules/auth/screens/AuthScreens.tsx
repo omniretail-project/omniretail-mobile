@@ -810,7 +810,6 @@ function AuthForm({
     <KeyboardAwareContainer
       containerStyle={styles.authContainer}
       contentContainerStyle={styles.scrollContent}
-      extraBottomSpace={60}
     >
       <View style={styles.decorativeCircleTop} />
       <View style={styles.decorativeCircleBottom} />
@@ -987,7 +986,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.vanillaMilk,
     flexGrow: 1,
     justifyContent: "center",
-    paddingBottom: spacing.xl + spacing.lg,
+    paddingBottom: spacing.xl,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
   },
