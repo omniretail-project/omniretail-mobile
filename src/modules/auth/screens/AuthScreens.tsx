@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -20,6 +19,7 @@ import {
   isApiMode,
   useRepositories,
 } from "@/infrastructure";
+import { KeyboardAwareContainer } from "@/shared";
 import { radius, spacing, typography } from "@/theme";
 
 import { useSession } from "../hooks/useSession";
@@ -807,11 +807,10 @@ function AuthForm({
   title,
 }: AuthFormProps) {
   return (
-    <ScrollView
-      automaticallyAdjustKeyboardInsets
-      contentContainerStyle={[styles.scrollContent, { paddingBottom: 60 }]}
-      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAwareContainer
+      containerStyle={styles.authContainer}
+      contentContainerStyle={styles.scrollContent}
+      extraBottomSpace={60}
     >
       <View style={styles.decorativeCircleTop} />
       <View style={styles.decorativeCircleBottom} />
@@ -864,7 +863,7 @@ function AuthForm({
           Compra fácil, segura y desde cualquier lugar.
         </Text>
       </View>
-    </ScrollView>
+    </KeyboardAwareContainer>
   );
 }
 
@@ -979,12 +978,15 @@ const palette = {
 };
 
 const styles = StyleSheet.create({
+  authContainer: {
+    backgroundColor: palette.vanillaMilk,
+    overflow: "hidden",
+  },
+
   scrollContent: {
     backgroundColor: palette.vanillaMilk,
     flexGrow: 1,
     justifyContent: "center",
-    minHeight: "100%",
-    overflow: "hidden",
     paddingBottom: spacing.xl + spacing.lg,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
