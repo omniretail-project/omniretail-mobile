@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -291,10 +291,11 @@ export function AddressesScreen() {
     }
   }
 
-  useEffect(() => {
-    const timeout = setTimeout(() => void load(), 0);
-    return () => clearTimeout(timeout);
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
   return (
     <FlatList
@@ -342,6 +343,8 @@ export function AddressesScreen() {
             </View>
 
           </View>
+
+
 
           {error ? (
             <View style={styles.addressErrorBox}>
@@ -496,6 +499,24 @@ export function AddressesScreen() {
           </View>
         </View>
       )}
+      ListFooterComponent={
+        addresses.length > 0 ? (
+          <Pressable
+              accessibilityLabel="Agregar nueva dirección"
+              onPress={() => router.push("/(protected)/addresses/new")}
+              style={styles.addressEmptyButton}
+            >
+              <Ionicons
+                name="add"
+                size={19}
+                color={accountPalette.white}
+              />
+              <Text style={styles.addressEmptyButtonText}>
+                Agregar nueva dirección
+              </Text>
+            </Pressable>
+        ) : null
+      }
     />
   );
 }
