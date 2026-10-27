@@ -14,6 +14,7 @@ import {
 import { ApiError, getErrorMessage, useRepositories } from "@/infrastructure";
 import { GUATEMALA_DEPARTMENTS, getGuatemalaMunicipalities } from "@/config";
 import { useSession } from "@/modules/auth";
+import { usePaymentMethods } from "@/modules/account";
 import { useCart } from "@/modules/cart";
 import { KeyboardAwareContainer, formatCurrency, OptionPicker } from "@/shared";
 import { colors, typography } from "@/theme";
@@ -113,6 +114,9 @@ export function ApiCheckoutDeliveryScreen() {
   // Precarga la dirección predeterminada de /me/addresses si el formulario está vacío.
   const { addressRepository } = useRepositories();
   const hasPrefilledAddress = useRef(false);
+  const [savedAddresses, setSavedAddresses] = useState<
+    Awaited<ReturnType<typeof addressRepository.getByCustomer>>
+  >([]);
 
   useEffect(() => {
     if (!session || hasPrefilledAddress.current || checkout.addressLine1.trim()) {
@@ -124,6 +128,7 @@ export function ApiCheckoutDeliveryScreen() {
     addressRepository
       .getByCustomer(session.tenantId, session.customerId)
       .then((addresses) => {
+        setSavedAddresses(addresses);
         const address =
           addresses.find((item) => item.isDefault) ?? addresses[0];
 
@@ -132,6 +137,7 @@ export function ApiCheckoutDeliveryScreen() {
           return;
         }
 
+        checkout.setAddressId(address.id);
         checkout.setAddressLine1(address.addressLine);
         checkout.setAddressLine2(address.addressLine2 ?? "");
         checkout.setCity(address.municipality ?? "");
@@ -208,6 +214,50 @@ export function ApiCheckoutDeliveryScreen() {
           </View>
         </View>
       </View>
+
+      {savedAddresses.length > 0 ? (
+        <View style={styles.checkoutSection}>
+          <Text style={styles.sectionTitle}>Mis direcciones guardadas</Text>
+          <Text style={styles.muted}>
+            Selecciona dónde deseas recibir el pedido.
+          </Text>
+          <View style={styles.group}>
+            {savedAddresses.map((address) => (
+              <Pressable
+                accessibilityRole="button"
+                key={address.id}
+                onPress={() => {
+                  checkout.setAddressId(address.id);
+                  checkout.setAddressLine1(address.addressLine);
+                  checkout.setAddressLine2(address.addressLine2 ?? "");
+                  checkout.setDepartment(address.department ?? "");
+                  checkout.setCity(address.municipality ?? "");
+                  checkout.setReferences(address.references ?? "");
+                }}
+                style={[
+                  styles.savedChoice,
+                  checkout.addressId === address.id
+                    ? styles.savedChoiceActive
+                    : null,
+                ]}
+              >
+                <Text style={styles.savedChoiceTitle}>
+                  {address.label}
+                  {address.isDefault ? " · Predeterminada" : ""}
+                </Text>
+                <Text style={styles.savedChoiceText}>
+                  {address.addressLine}
+                </Text>
+                <Text style={styles.savedChoiceText}>
+                  {[address.municipality, address.department]
+                    .filter(Boolean)
+                    .join(", ")}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
 
       <View style={styles.checkoutSection}>
         <Text style={styles.sectionTitle}>Datos de entrega</Text>
@@ -291,6 +341,18 @@ export function ApiCheckoutDeliveryScreen() {
 
 export function ApiCheckoutPaymentScreen() {
   const checkout = useCheckout();
+  const {
+    methods: savedCards,
+    isLoading: savedCardsLoading,
+  } = usePaymentMethods();
+  const [usingNewCard, setUsingNewCard] = useState(false);
+
+  const selectedSavedCard =
+    savedCards.find(
+      (card) => card.id === checkout.customerPaymentMethodId,
+    ) ??
+    savedCards.find((card) => card.isDefault) ??
+    savedCards[0];
   const [error, setError] = useState<string | null>(null);
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiration, setCardExpiration] = useState("");
@@ -311,6 +373,61 @@ export function ApiCheckoutPaymentScreen() {
 
   function continueToReview() {
     setError(null);
+
+    // SIMULACION CON TARJETA GUARDADA
+    if (!usingNewCard && savedCards.length > 0) {
+      const tarjeta =
+        selectedSavedCard ??
+        savedCards.find((item) => item.isDefault) ??
+        savedCards[0];
+
+      const ultimosCuatro = (tarjeta.last4 ?? "")
+        .replace(/\D/g, "")
+        .slice(-4);
+
+      const titular =
+        (tarjeta.cardholderName ?? "").trim() ||
+        checkout.fullName.trim();
+
+      if (ultimosCuatro.length !== 4) {
+        setError(
+          "La tarjeta guardada no tiene los últimos 4 dígitos válidos."
+        );
+        return;
+      }
+
+      if (!titular) {
+        setError("Ingresa el nombre del titular.");
+        return;
+      }
+
+      checkout.setCardholderName(titular);
+      checkout.setCardLastFour(ultimosCuatro);
+
+      router.push("/(protected)/checkout/review");
+      return;
+    }
+
+    if (savedCardsLoading) {
+      return;
+    }
+
+    if (!usingNewCard && selectedSavedCard) {
+      if (!/^\\d{4}$/.test(selectedSavedCard.last4 ?? "")) {
+        setError("La tarjeta guardada no tiene datos válidos.");
+        return;
+      }
+
+      checkout.setCustomerPaymentMethodId(selectedSavedCard.id);
+      checkout.setCardLastFour(selectedSavedCard.last4 ?? "");
+      checkout.setCardholderName(
+        selectedSavedCard.cardholderName?.trim() ||
+        checkout.fullName.trim(),
+      );
+
+      router.push("/(protected)/checkout/review");
+      return;
+    }
 
     const cardNumberError = validateCardNumber(cardDigits);
     if (cardNumberError) {
@@ -382,7 +499,67 @@ export function ApiCheckoutPaymentScreen() {
       </View>
 
       <View style={styles.checkoutSection}>
+        <Text style={styles.sectionTitle}>Tarjetas guardadas</Text>
+
+        {savedCardsLoading ? (
+          <ActivityIndicator color="#3E668F" />
+        ) : savedCards.length === 0 ? (
+          <Text style={styles.muted}>
+            Todavía no tienes tarjetas de prueba guardadas.
+          </Text>
+        ) : (
+          <View style={styles.group}>
+            {savedCards.map((card) => (
+              <Pressable
+                accessibilityRole="button"
+                key={card.id}
+                onPress={() => {
+                  setUsingNewCard(false);
+                  checkout.setCustomerPaymentMethodId(card.id);
+                  setError(null);
+                }}
+                style={[
+                  styles.savedChoice,
+                  !usingNewCard && selectedSavedCard?.id === card.id
+                    ? styles.savedChoiceActive
+                    : null,
+                ]}
+              >
+                <Text style={styles.savedChoiceTitle}>
+                  {card.brand || "Tarjeta"} ···· {card.last4}
+                </Text>
+                <Text style={styles.savedChoiceText}>
+                  {card.cardholderName || "Tarjeta guardada"}
+                  {card.isDefault ? " · Predeterminada" : ""}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+
+
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/(protected)/account/new-payment-method",
+              params: { returnTo: "checkout" },
+            })
+          }
+        >
+          <Text style={styles.savedChoiceLink}>
+            + Registrar otra tarjeta
+          </Text>
+        </Pressable>
+      </View>
+
+      {!savedCardsLoading &&
+      (usingNewCard || savedCards.length === 0) ? (
+      <View style={styles.checkoutSection}>
         <Text style={styles.sectionTitle}>Datos de la tarjeta</Text>
+        <Text style={styles.muted}>
+          Solo para demostración. No ingreses datos bancarios reales.
+        </Text>
 
         <View style={styles.group}>
           <Field
@@ -452,10 +629,13 @@ export function ApiCheckoutPaymentScreen() {
           </View>
         </View>
       </View>
+      ) : null}
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Pressable onPress={continueToReview} style={styles.primaryButton}>
+      <Pressable
+        disabled={savedCardsLoading}
+        onPress={continueToReview} style={styles.primaryButton}>
         <Text style={styles.primaryText}>Revisar pedido</Text>
       </Pressable>
     </KeyboardAwareContainer>
@@ -795,6 +975,34 @@ function Field({
 }
 
 const styles = StyleSheet.create({
+  savedChoice: {
+    backgroundColor: "#FAFBFD",
+    borderColor: "#DDE3EE",
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 5,
+    padding: 14,
+  },
+  savedChoiceActive: {
+    backgroundColor: "#E7E8F8",
+    borderColor: "#3E668F",
+    borderWidth: 2,
+  },
+  savedChoiceTitle: {
+    color: "#3E668F",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  savedChoiceText: {
+    color: "#172033",
+    fontSize: 13,
+  },
+  savedChoiceLink: {
+    color: "#3E668F",
+    fontSize: 14,
+    fontWeight: "800",
+    paddingVertical: 10,
+  },
   activeCheck: {
     alignItems: "center",
     backgroundColor: "#3E668F",
