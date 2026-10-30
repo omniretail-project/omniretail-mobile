@@ -8,7 +8,7 @@ import { isApiMode, useRepositories } from "@/infrastructure";
 import { useSession } from "@/modules/auth";
 import { useCart } from "@/modules/cart";
 import { useInvoiceDownload } from "@/modules/invoice";
-import { formatCurrency, KeyboardAwareContainer } from "@/shared";
+import { formatCurrency, KeyboardAwareContainer, useBusinessConfig } from "@/shared";
 import { colors, spacing, typography } from "@/theme";
 
 import { calculateCheckoutTotals } from "../application/checkoutPricing";
@@ -523,7 +523,8 @@ function MockCheckoutReviewScreen() {
   const [error, setError] = useState<string | null>(null);
   const [deliveryLabel, setDeliveryLabel] = useState("Pendiente");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const totals = calculateCheckoutTotals(lines, checkout.deliveryMethod);
+  const { shipping } = useBusinessConfig();
+  const totals = calculateCheckoutTotals(lines, checkout.deliveryMethod, shipping);
 
   useEffect(() => {
     async function loadDeliveryLabel() {

@@ -58,7 +58,7 @@ export async function placeOrder(repositories: RepositoryRegistry, session: { te
     });
   }
 
-  const totals = calculateCheckoutTotals(lines, selection.deliveryMethod);
+  const totals = calculateCheckoutTotals(lines, selection.deliveryMethod, business.shipping);
   const order = await repositories.orderRepository.create({
     tenantId: session.tenantId,
     number: await resolveNextOrderNumber(repositories, session.tenantId),

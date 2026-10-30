@@ -122,6 +122,12 @@ export type ApiStorefrontBranch = {
   email?: string | null;
 };
 
+export type ApiStorefrontShippingConfig = {
+  enabled: boolean;
+  deliveryFee: number;
+  freeShippingThreshold?: number | null;
+};
+
 export type ApiStorefrontConfigResponse = {
   tenantId: string;
   enabled: boolean;
@@ -137,4 +143,5 @@ export type ApiStorefrontConfigResponse = {
     imageUrl?: string | null;
   }[];
   branches: ApiStorefrontBranch[];
+  shipping?: ApiStorefrontShippingConfig | null;
 };

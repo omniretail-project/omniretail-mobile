@@ -65,6 +65,23 @@ describe("useBusinessConfig", () => {
     expect(result.current.heroSlides).toEqual(slides);
   });
 
+  it("entrega la configuracion de envio cuando esta disponible", async () => {
+    state.getCurrent.mockResolvedValue(
+      config({
+        shipping: { enabled: true, deliveryFee: 50, freeShippingThreshold: 300 },
+      }),
+    );
+
+    const { result } = renderHook(() => useBusinessConfig());
+
+    await waitFor(() => expect(result.current.shipping).toBeDefined());
+    expect(result.current.shipping).toEqual({
+      enabled: true,
+      deliveryFee: 50,
+      freeShippingThreshold: 300,
+    });
+  });
+
   it("si la configuracion no tiene nombre conserva el valor por defecto", async () => {
     state.getCurrent.mockResolvedValue(config({ name: "   " }));
 

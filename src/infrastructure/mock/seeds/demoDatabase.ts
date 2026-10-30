@@ -369,5 +369,10 @@ export const demoDatabase: MockDatabase = {
       primaryColor: "#1D4ED8",
       accentColor: "#F7C948",
     },
+    shipping: {
+      enabled: true,
+      deliveryFee: 25,
+      freeShippingThreshold: 300,
+    },
   },
 };
