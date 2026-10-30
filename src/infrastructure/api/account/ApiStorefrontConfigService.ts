@@ -77,7 +77,11 @@ export class ApiBusinessConfigRepository implements BusinessConfigRepository {
         ? {
             enabled: Boolean(config.shipping.enabled),
             deliveryFee: Number(config.shipping.deliveryFee ?? 0),
-            freeShippingThreshold: Number(config.shipping.freeShippingThreshold ?? 0),
+            freeShippingThreshold:
+              config.shipping.freeShippingThreshold != null &&
+              !isNaN(Number(config.shipping.freeShippingThreshold))
+                ? Number(config.shipping.freeShippingThreshold)
+                : null,
           }
         : undefined,
     };

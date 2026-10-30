@@ -63,6 +63,28 @@ describe("calculateHomeDeliveryShipping", () => {
     expect(calculateHomeDeliveryShipping(149, shippingConfig)).toBe(40);
     expect(calculateHomeDeliveryShipping(150, shippingConfig)).toBe(0);
   });
+
+  it("no aplica envio gratis si el umbral es null o indefinido aunque el subtotal sea alto", () => {
+    const shippingConfig = {
+      enabled: true,
+      deliveryFee: 50,
+      freeShippingThreshold: null,
+    };
+
+    expect(calculateHomeDeliveryShipping(30, shippingConfig)).toBe(50);
+    expect(calculateHomeDeliveryShipping(1000, shippingConfig)).toBe(50);
+    expect(calculateHomeDeliveryShipping(50000, shippingConfig)).toBe(50);
+  });
+
+  it("no aplica envio gratis si el umbral es 0 o negativo", () => {
+    const shippingConfig = {
+      enabled: true,
+      deliveryFee: 35,
+      freeShippingThreshold: 0,
+    };
+
+    expect(calculateHomeDeliveryShipping(500, shippingConfig)).toBe(35);
+  });
 });
 
 describe("calculateCartTotals", () => {

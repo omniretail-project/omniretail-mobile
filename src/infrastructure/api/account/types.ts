@@ -125,7 +125,7 @@ export type ApiStorefrontBranch = {
 export type ApiStorefrontShippingConfig = {
   enabled: boolean;
   deliveryFee: number;
-  freeShippingThreshold: number;
+  freeShippingThreshold?: number | null;
 };
 
 export type ApiStorefrontConfigResponse = {

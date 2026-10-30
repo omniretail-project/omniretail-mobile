@@ -23,7 +23,7 @@ export type BusinessHeroSlide = {
 export type BusinessShippingConfig = {
   enabled: boolean;
   deliveryFee: number;
-  freeShippingThreshold: number;
+  freeShippingThreshold?: number | null;
 };
 
 export type BusinessConfig = {

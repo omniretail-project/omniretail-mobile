@@ -61,7 +61,7 @@ describe("ApiBusinessConfigRepository (config publica de la tienda)", () => {
       email: "ventas@tienda.com",
       address: "Zona 1",
     });
-  }, 15000);
+  });
 
   it("sin logo ni carrusel configurados no inventa imagenes", async () => {
     const { repository } = await loadRepository({ ...baseResponse, logoUrl: null, slides: [] });
@@ -97,5 +97,24 @@ describe("ApiBusinessConfigRepository (config publica de la tienda)", () => {
     const config = await repository.getCurrent();
 
     expect(config.shipping).toBeUndefined();
+  });
+
+  it("mapea freeShippingThreshold como null cuando la API no ofrece envio gratis", async () => {
+    const { repository } = await loadRepository({
+      ...baseResponse,
+      shipping: {
+        enabled: true,
+        deliveryFee: 45,
+        freeShippingThreshold: null,
+      },
+    });
+
+    const config = await repository.getCurrent();
+
+    expect(config.shipping).toEqual({
+      enabled: true,
+      deliveryFee: 45,
+      freeShippingThreshold: null,
+    });
   });
 });

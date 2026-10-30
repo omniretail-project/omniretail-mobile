@@ -32,9 +32,16 @@ export function calculateHomeDeliveryShipping(
   if (shippingConfig && !shippingConfig.enabled) {
     return 0;
   }
-  const threshold = shippingConfig?.freeShippingThreshold ?? FREE_SHIPPING_THRESHOLD;
   const cost = shippingConfig?.deliveryFee ?? HOME_DELIVERY_SHIPPING_COST;
-  return subtotal >= threshold ? 0 : cost;
+  const threshold =
+    shippingConfig !== undefined
+      ? shippingConfig.freeShippingThreshold
+      : FREE_SHIPPING_THRESHOLD;
+
+  if (threshold != null && threshold > 0 && subtotal >= threshold) {
+    return 0;
+  }
+  return cost;
 }
 
 export function calculateCartTotals(
