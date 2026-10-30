@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
+import type { BusinessShippingConfig } from "@/core";
 import { useRepositories } from "@/infrastructure";
 import {
   calculatePrice,
@@ -16,6 +17,7 @@ type CartState = {
   currency: string;
   lines: CartLine[];
   totals: CartTotals;
+  shippingConfig?: BusinessShippingConfig;
   isLoading: boolean;
   error: string | null;
 };
@@ -82,6 +84,7 @@ export function useCart() {
         currency: business.currency,
         lines,
         totals: calculateCartTotals(lines, undefined, business.shipping),
+        shippingConfig: business.shipping,
         isLoading: false,
         error: null,
       });

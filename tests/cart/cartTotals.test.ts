@@ -172,4 +172,10 @@ describe("checkoutPricing", () => {
     expect(totals.shippingCost).toBe(50);
     expect(totals.total).toBe(80);
   });
+
+  it("retorna 0 de envio en checkout con carrito vacio", () => {
+    const totals = calculateCheckoutTotals([], DeliveryMethod.HomeDelivery, shippingConfig);
+    expect(totals.shippingCost).toBe(0);
+    expect(totals.total).toBe(0);
+  });
 });

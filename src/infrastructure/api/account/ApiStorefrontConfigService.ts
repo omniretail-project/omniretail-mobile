@@ -78,7 +78,7 @@ export class ApiBusinessConfigRepository implements BusinessConfigRepository {
             enabled: Boolean(config.shipping.enabled),
             deliveryFee: (() => {
               const fee = Number(config.shipping.deliveryFee);
-              return Number.isFinite(fee) ? fee : 0;
+              return Number.isFinite(fee) && fee >= 0 ? fee : 0;
             })(),
             freeShippingThreshold: (() => {
               const threshold = Number(config.shipping.freeShippingThreshold);

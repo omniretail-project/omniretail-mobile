@@ -22,6 +22,9 @@ export function calculateCheckoutTotals(
   deliveryMethod: DeliveryMethod | null,
   shippingConfig?: BusinessShippingConfig,
 ) {
+  if (lines.length === 0) {
+    return calculateCartTotals([], 0, shippingConfig);
+  }
   const cartTotals = calculateCartTotals(lines, 0, shippingConfig);
   return calculateCartTotals(
     lines,
