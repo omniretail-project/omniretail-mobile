@@ -77,7 +77,14 @@ export function useCart() {
       );
       const lines = linesWithMissingProducts.filter((line): line is CartLine => !!line);
 
-      setState({ cartId: cart.id, currency: business.currency, lines, totals: calculateCartTotals(lines), isLoading: false, error: null });
+      setState({
+        cartId: cart.id,
+        currency: business.currency,
+        lines,
+        totals: calculateCartTotals(lines, undefined, business.shipping),
+        isLoading: false,
+        error: null,
+      });
     } catch {
       setState((current) => ({ ...current, isLoading: false, error: "No se pudo cargar el carrito." }));
     }

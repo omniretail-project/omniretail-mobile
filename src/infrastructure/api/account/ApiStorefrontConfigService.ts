@@ -73,6 +73,13 @@ export class ApiBusinessConfigRepository implements BusinessConfigRepository {
         email: config.contactEmail ?? undefined,
         address: config.branches[0]?.address ?? undefined,
       },
+      shipping: config.shipping
+        ? {
+            enabled: Boolean(config.shipping.enabled),
+            deliveryFee: Number(config.shipping.deliveryFee ?? 0),
+            freeShippingThreshold: Number(config.shipping.freeShippingThreshold ?? 0),
+          }
+        : undefined,
     };
   }
 }

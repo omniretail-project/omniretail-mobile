@@ -20,6 +20,12 @@ export type BusinessHeroSlide = {
   imageUri?: string;
 };
 
+export type BusinessShippingConfig = {
+  enabled: boolean;
+  deliveryFee: number;
+  freeShippingThreshold: number;
+};
+
 export type BusinessConfig = {
   tenantId: TenantId;
   name: string;
@@ -29,4 +35,5 @@ export type BusinessConfig = {
   currency: CurrencyCode;
   support: SupportInfo;
   branding?: BusinessBranding;
+  shipping?: BusinessShippingConfig;
 };

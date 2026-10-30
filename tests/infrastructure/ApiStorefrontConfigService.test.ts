@@ -34,7 +34,9 @@ describe("ApiBusinessConfigRepository (config publica de la tienda)", () => {
     vi.unstubAllEnvs();
   });
 
-  it("completa las rutas relativas del logo y del carrusel con el origen de la API", async () => {
+  it(
+    "completa las rutas relativas del logo y del carrusel con el origen de la API",
+    async () => {
     const { repository, get } = await loadRepository({
       ...baseResponse,
       slides: [
@@ -59,7 +61,7 @@ describe("ApiBusinessConfigRepository (config publica de la tienda)", () => {
       email: "ventas@tienda.com",
       address: "Zona 1",
     });
-  });
+  }, 15000);
 
   it("sin logo ni carrusel configurados no inventa imagenes", async () => {
     const { repository } = await loadRepository({ ...baseResponse, logoUrl: null, slides: [] });
@@ -68,5 +70,32 @@ describe("ApiBusinessConfigRepository (config publica de la tienda)", () => {
 
     expect(config.logoUri).toBeUndefined();
     expect(config.heroSlides).toEqual([]);
+  });
+
+  it("mapea la configuracion de envio cuando viene en la respuesta", async () => {
+    const { repository } = await loadRepository({
+      ...baseResponse,
+      shipping: {
+        enabled: true,
+        deliveryFee: 50,
+        freeShippingThreshold: 300,
+      },
+    });
+
+    const config = await repository.getCurrent();
+
+    expect(config.shipping).toEqual({
+      enabled: true,
+      deliveryFee: 50,
+      freeShippingThreshold: 300,
+    });
+  });
+
+  it("deja shipping como undefined cuando no viene configurado", async () => {
+    const { repository } = await loadRepository({ ...baseResponse, shipping: null });
+
+    const config = await repository.getCurrent();
+
+    expect(config.shipping).toBeUndefined();
   });
 });

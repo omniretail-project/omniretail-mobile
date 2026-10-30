@@ -53,5 +53,6 @@ export function useBusinessConfig() {
     storeName: config?.name?.trim() || DEFAULT_STORE_NAME,
     logoUri: config?.logoUri,
     heroSlides: config?.heroSlides ?? NO_SLIDES,
+    shipping: config?.shipping,
   };
 }
