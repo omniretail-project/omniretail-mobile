@@ -88,6 +88,20 @@ describe("calculateHomeDeliveryShipping", () => {
 });
 
 describe("calculateCartTotals", () => {
+  it("asigna costo de envio 0 si el carrito esta vacio", () => {
+    const shippingConfig = {
+      enabled: true,
+      deliveryFee: 50,
+      freeShippingThreshold: 300,
+    };
+
+    const totals = calculateCartTotals([], undefined, shippingConfig);
+
+    expect(totals.subtotal).toBe(0);
+    expect(totals.shippingCost).toBe(0);
+    expect(totals.total).toBe(0);
+  });
+
   it("calcula correctamente el total con envio dinamico de Q. 50 para un producto de Q. 30", () => {
     const shippingConfig = {
       enabled: true,
