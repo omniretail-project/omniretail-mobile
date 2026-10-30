@@ -77,11 +77,8 @@ export function useCommerceCatalog(
       const categories =
         await repositories.categoryRepository.getAll(tenantId);
 
-      const promotions = apiMode
-        ? []
-        : await repositories.promotionRepository.getActive(
-            tenantId,
-          );
+      const promotions =
+        await repositories.promotionRepository.getActive(tenantId);
 
       const favorites = session
         ? await repositories.favoriteRepository.getByCustomer(
@@ -249,12 +246,11 @@ export function useCommerceCatalog(
       return { status: "limit-reached", availableQuantity };
     }
 
-    const promotions = isApiMode()
-      ? []
-      : await repositories.promotionRepository.getByProduct(
-          session.tenantId,
-          product.id,
-        );
+    const promotions =
+      await repositories.promotionRepository.getByProduct(
+        session.tenantId,
+        product.id,
+      );
 
     const viewModel = createProductCardViewModel(
       product,
