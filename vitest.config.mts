@@ -27,6 +27,8 @@ export default defineConfig({
         "src/modules/auth/session/SessionProvider.tsx",
         "src/modules/account/application/cardValidation.ts",
         "src/infrastructure/api/account/ApiStorefrontConfigService.ts",
+        "src/infrastructure/api/catalog/ApiPromotionRepository.ts",
+        "src/infrastructure/api/catalog/ApiProductRepository.ts",
         "src/modules/cart/application/cartTotals.ts",
         "src/modules/checkout/application/checkoutPricing.ts",
         "src/modules/home/components/RemoteBannerCard.tsx",

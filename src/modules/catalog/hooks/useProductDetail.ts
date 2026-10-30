@@ -65,12 +65,11 @@ export function useProductDetail(productId?: string) {
           product.id,
         );
 
-      const promotions = apiMode
-        ? []
-        : await repositories.promotionRepository.getByProduct(
-            tenantId,
-            product.id,
-          );
+      const promotions =
+        await repositories.promotionRepository.getByProduct(
+          tenantId,
+          product.id,
+        );
 
       const media = await repositories.productMediaRepository.getByProduct(
         product.id,

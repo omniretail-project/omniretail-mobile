@@ -31,6 +31,7 @@ import {
   ApiProductAvailabilityRepository,
   ApiProductMediaRepository,
   ApiProductRepository,
+  ApiPromotionRepository,
   ApiStorefrontConfigService,
   ApiTokenStorage,
   apiConfig,
@@ -91,9 +92,10 @@ export function getRepositoryRegistry(): RepositoryRegistry {
 }
 
 /**
- * Modo API: lo que el backend ya expone es remoto. Carrito, favoritos, notificaciones,
- * promociones, media y pagos por pedido siguen siendo almacenamiento local deliberado
- * (MockDatabaseStore) porque el backend todavía no ofrece esos endpoints para clientes.
+ * Modo API: lo que el backend ya expone es remoto. Carrito, favoritos, notificaciones
+ * y pagos por pedido siguen siendo almacenamiento local deliberado (MockDatabaseStore)
+ * porque el backend todavía no ofrece esos endpoints para clientes.
+ * Las promociones se proyectan dinámicamente desde los productos del storefront.
  */
 export function createRepositoryRegistry(): RepositoryRegistry {
   assertApiConfig();
@@ -137,6 +139,7 @@ export function createRepositoryRegistry(): RepositoryRegistry {
   const apiProductAvailabilityRepository =
     new ApiProductAvailabilityRepository();
   const apiProductMediaRepository = new ApiProductMediaRepository();
+  const apiPromotionRepository = new ApiPromotionRepository();
 
   const apiProductRepository = new ApiProductRepository(
     apiClient,
@@ -144,6 +147,7 @@ export function createRepositoryRegistry(): RepositoryRegistry {
     apiCategoryRepository,
     apiProductAvailabilityRepository,
     apiProductMediaRepository,
+    apiPromotionRepository,
   );
 
   const apiCheckoutService = new ApiCheckoutService(
@@ -173,7 +177,9 @@ export function createRepositoryRegistry(): RepositoryRegistry {
     categoryRepository: isApiMode()
       ? apiCategoryRepository
       : new MockCategoryRepository(databaseStore),
-    promotionRepository: new MockPromotionRepository(databaseStore),
+    promotionRepository: isApiMode()
+      ? apiPromotionRepository
+      : new MockPromotionRepository(databaseStore),
     productAvailabilityRepository: isApiMode()
       ? apiProductAvailabilityRepository
       : new MockProductAvailabilityRepository(databaseStore),

@@ -13,6 +13,7 @@ import type { ApiClient } from "../ApiClient";
 import { ApiCategoryRepository } from "./ApiCategoryRepository";
 import { ApiProductAvailabilityRepository } from "./ApiProductAvailabilityRepository";
 import { ApiProductMediaRepository } from "./ApiProductMediaRepository";
+import { ApiPromotionRepository } from "./ApiPromotionRepository";
 import type { ApiStorefrontProduct } from "./types";
 
 export class ApiProductRepository implements ProductRepository {
@@ -24,6 +25,7 @@ export class ApiProductRepository implements ProductRepository {
     private readonly categoryRepository?: ApiCategoryRepository,
     private readonly availabilityRepository?: ApiProductAvailabilityRepository,
     private readonly mediaRepository?: ApiProductMediaRepository,
+    private readonly promotionRepository?: ApiPromotionRepository,
   ) {}
 
   async getAll(tenantId: TenantId): Promise<Product[]> {
@@ -39,6 +41,7 @@ export class ApiProductRepository implements ProductRepository {
     this.categoryRepository?.syncFromProducts(response, tenantId);
     this.availabilityRepository?.syncFromProducts(response, tenantId);
     this.mediaRepository?.syncFromProducts(response, tenantId);
+    this.promotionRepository?.syncFromProducts(response, tenantId);
     return products;
   }
 
@@ -56,6 +59,7 @@ export class ApiProductRepository implements ProductRepository {
       // El detalle puede abrirse sin haber cargado el catálogo (deep link, recarga en web).
       this.availabilityRepository?.syncFromProducts([response], tenantId);
       this.mediaRepository?.syncFromProducts([response], tenantId);
+      this.promotionRepository?.syncFromProducts([response], tenantId);
       return product;
     } catch (error) {
       if (
@@ -118,15 +122,39 @@ export class ApiProductRepository implements ProductRepository {
       unitId: item.saleUnitId,
       type: ProductType.Physical,
       status: ProductStatus.Published,
-      channels: [SalesChannel.Ecommerce],
+      channels: [SalesChannel.Ecommerce, SalesChannel.MobileApp],
       basePrice: {
         productId: item.id,
         currency: "GTQ",
-        amount: Number(item.effectivePrice),
+        amount: this.resolveBasePrice(item),
       },
       createdAt: "",
       updatedAt: "",
     };
+  }
+
+  private resolveBasePrice(item: ApiStorefrontProduct): number {
+    if (item.basePrice != null && Number(item.basePrice) > 0) {
+      return Number(item.basePrice);
+    }
+
+    if (item.salePrice != null && Number(item.salePrice) > 0) {
+      return Number(item.salePrice);
+    }
+
+    if (
+      item.discountAmount != null &&
+      Number(item.discountAmount) > 0 &&
+      item.effectivePrice != null
+    ) {
+      return (
+        Math.round(
+          (Number(item.effectivePrice) + Number(item.discountAmount)) * 100,
+        ) / 100
+      );
+    }
+
+    return Number(item.effectivePrice ?? 0);
   }
 
   private cache(products: Product[]): void {
